@@ -31,6 +31,50 @@ function isWithinDirectory(directory, target) {
   );
 }
 
+function isDirectory(candidate) {
+  try {
+    return fs.statSync(candidate).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+function isFile(candidate) {
+  try {
+    return fs.statSync(candidate).isFile();
+  } catch {
+    return false;
+  }
+}
+
+function findProjectRoot(startDirectory) {
+  // The project root is the nearest ancestor holding BOTH CLAUDE.md and docs/.
+  // Walking upward from the hook input's cwd keeps this correct from the
+  // repository root, docs/, .claude/ and any nested directory, and inside a
+  // Claude Code worktree, where CLAUDE_PROJECT_DIR still points at the
+  // original checkout and would resolve docs/ in the wrong tree.
+  let current = path.resolve(startDirectory);
+
+  for (;;) {
+    if (
+      isFile(path.join(current, "CLAUDE.md")) &&
+      isDirectory(path.join(current, "docs"))
+    ) {
+      return current;
+    }
+
+    const parent = path.dirname(current);
+
+    if (parent === current) {
+      throw new Error(
+        "could not locate a project root containing both CLAUDE.md and a docs/ directory."
+      );
+    }
+
+    current = parent;
+  }
+}
+
 function resolveExistingTarget(targetPath) {
   // Resolve the real path when the target already exists. This catches a
   // target file that is itself a symlink to a location outside docs/.
@@ -82,12 +126,13 @@ function main() {
     block("the target file path was missing.");
   }
 
-  // Claude Code supplies an absolute file_path for Write and Edit. The
-  // working directory is used only to locate docs/ in the active checkout.
+  // Claude Code supplies an absolute file_path for Write and Edit. The hook
+  // input's cwd identifies the active checkout, which is the worktree when the
+  // agent runs under worktree isolation, so it is the primary resolver here.
   const workingDirectory =
-    (typeof event.cwd === "string" && event.cwd.trim() !== ""
+    typeof event.cwd === "string" && event.cwd.trim() !== ""
       ? event.cwd
-      : process.env.CLAUDE_PROJECT_DIR) || process.cwd();
+      : process.cwd();
 
   let projectRoot;
   let docsDirectory;
@@ -96,13 +141,8 @@ function main() {
   let realTarget;
 
   try {
-    projectRoot = path.resolve(workingDirectory);
+    projectRoot = findProjectRoot(workingDirectory);
     docsDirectory = path.join(projectRoot, "docs");
-
-    if (!fs.existsSync(docsDirectory) || !fs.statSync(docsDirectory).isDirectory()) {
-      block("the active checkout does not contain a docs/ directory.");
-    }
-
     realDocsDirectory = fs.realpathSync(docsDirectory);
 
     // Absolute paths remain absolute. Relative paths are resolved against

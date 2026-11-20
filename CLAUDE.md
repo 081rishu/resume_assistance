@@ -101,38 +101,7 @@ It is responsible for:
 - Reviewing integration results.
 - Keeping implementation aligned with requirements.
 
-Specialized agents:
-
-### Implementation agents
-1. Database Engineer
-2. Backend/API Engineer
-3. Frontend Engineer
-4. LinkedIn Integration Engineer
-5. GitHub Integration Engineer
-6. PDF Engineer
-
-Each implementation agent must:
-- Work within its assigned responsibility.
-- Respect shared contracts.
-- Avoid modifying another agent's owned modules without approval.
-- Keep changes focused on its assigned task.
-- Report blockers and proposed contract changes to the orchestrator.
-
-### Review agents
-7. Contract Auditor
-8. Code Reviewer
-
-Review agents must independently inspect and report findings. They must not implement fixes or modify project files.
-
-### Documentation agent
-9. Documentation Engineer
-
-The Documentation Engineer:
-- Can inspect the entire codebase.
-- Can create and edit documentation only inside `docs/`.
-- Must document verified implementation and approved decisions.
-- Must not modify source code or shared contracts.
-- Must report missing information rather than inventing it.
+Specialized agent roles, ownership and boundaries are defined in `.claude/agents/*.md`.
 
 ## 8. Agent Coordination and Git
 

@@ -6,10 +6,14 @@ model: inherit
 isolation: worktree
 hooks:
   PreToolUse:
-    - matcher: "Edit|Write"
+    - matcher: "^(Edit|Write)$"
       hooks:
         - type: command
-          command: 'node "${CLAUDE_PROJECT_DIR}/.claude/hooks/docs-only-write-guard.js"'
+          command: node
+          args:
+            - "${CLAUDE_PROJECT_DIR}/.claude/hooks/docs-only-write-guard.js"
+          timeout: 10
+          onFailure: "block"
 ---
 
 # Role
